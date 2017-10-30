@@ -1,0 +1,82 @@
+---
+title: "Analise dos gastos de deputados"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r}
+dados <- read.csv("dadosCEAP.csv")
+
+```
+
+#QUESTAO 1
+
+```{r}
+agrupado_por_partido_count <- dados %>% na.omit() %>% group_by(sgPartido) %>% summarise(frequencia = n())
+agrupado_por_partido_valor <- dados %>% na.omit() %>% group_by(sgPartido) %>% summarise(valorTotal = sum(valorLíquido))
+
+ggplot(data = agrupado_por_partido_count, aes(x = reorder(sgPartido, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Uso do CEAP por partido") + xlab("Partido") + ylab("Numero de vezes que o CEAP foi utilizado")
+
+ggplot(data = agrupado_por_partido_valor, aes(x = reorder(sgPartido, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Uso do CEAP por partido") + xlab("Partido") + ylab("Valor total gasto em reais")
+```
+
+
+#QUESTAO 2
+
+```{r}
+agrupado_por_despesa_count <- dados %>% group_by(tipoDespesa) %>% summarise(frequencia = n())
+agrupado_por_despesa_valor <- dados %>% group_by(tipoDespesa) %>% summarise(valorTotal = sum(valorLíquido))
+
+ggplot(data = agrupado_por_despesa_count, aes(x = reorder(tipoDespesa, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Tipos de despesas mais comuns no CEAP") + xlab("Tipo de despesa") + ylab("Numero de vezes que o CEAP foi utilizado para despesa")
+
+ggplot(data = agrupado_por_despesa_valor, aes(x = reorder(tipoDespesa, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Tipos de despesas mais comuns no CEAP") + xlab("Tipo de despesa") + ylab("Valor gasto por despesa")
+
+```
+
+#QUESTAO 3
+
+```{r}
+
+agrupado_por_estado_count <- dados %>% na.omit() %>% group_by(sgUF) %>% summarise(frequencia = n())
+agrupado_por_estado_valor <- dados %>% na.omit() %>% group_by(sgUF) %>% summarise(valorTotal = sum(valorLíquido))
+
+ggplot(data = agrupado_por_estado_count, aes(x = reorder(sgUF, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Uso do CEAP por estado") + xlab("Estado") + ylab("Numero de vezes que o CEAP foi utilizado para o estado")
+
+ggplot(data = agrupado_por_estado_valor, aes(x = reorder(sgUF, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Uso do CEAP por estado") + xlab("Estado") + ylab("Valor gasto por estado")
+
+```
+
+#QUESTAO 4
+
+```{r}
+agrupado_por_deputado <- dados %>% filter (valorLíquido >= 0) %>% group_by(nomeParlamentar, sgPartido, sgUF) %>%
+  summarise(valorTotal = sum(valorLíquido))
+deputados_ordenados_crescente <- agrupado_por_deputado[order(agrupado_por_deputado$valorTotal),]
+deputados_ordenados_decrescente <- agrupado_por_deputado[order(decreasing = TRUE, agrupado_por_deputado$valorTotal),]
+
+menos_gastam <- deputados_ordenados_crescente %>% head(15)
+mais_gastam <- deputados_ordenados_decrescente %>% head(15)
+
+```
+
+#QUESTAO 5
+
+```{r}
+
+```
+
+
+
+
