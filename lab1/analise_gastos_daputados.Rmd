@@ -12,7 +12,7 @@ library(ggplot2)
 
 ```{r}
 dados <- read.csv("dadosCEAP.csv")
-
+limites <- read.csv("limiteMensalCEAP.csv")
 ```
 
 #QUESTAO 1
@@ -26,6 +26,8 @@ ggplot(data = agrupado_por_partido_count, aes(x = reorder(sgPartido, frequencia)
 
 ggplot(data = agrupado_por_partido_valor, aes(x = reorder(sgPartido, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("Uso do CEAP por partido") + xlab("Partido") + ylab("Valor total gasto em reais")
+
+
 ```
 
 
@@ -66,8 +68,15 @@ agrupado_por_deputado <- dados %>% filter (valorLíquido >= 0) %>% group_by(nome
 deputados_ordenados_crescente <- agrupado_por_deputado[order(agrupado_por_deputado$valorTotal),]
 deputados_ordenados_decrescente <- agrupado_por_deputado[order(decreasing = TRUE, agrupado_por_deputado$valorTotal),]
 
-menos_gastam <- deputados_ordenados_crescente %>% head(15)
-mais_gastam <- deputados_ordenados_decrescente %>% head(15)
+menos_gastam <- deputados_ordenados_crescente %>% head(10)
+mais_gastam <- deputados_ordenados_decrescente %>% head(10)
+
+ggplot(data = menos_gastam, aes(x = reorder(nomeParlamentar, -valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("15 deputados que menos gastam com CEAP") + xlab("Deputado") + ylab("Valor total gasto (em reais)")
+
+
+ggplot(data = mais_gastam, aes(x = reorder(nomeParlamentar, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("15 deputados que mais gastam com CEAP") + xlab("Deputado") + ylab("Valor total gasto (em reais)")
 
 ```
 
@@ -75,8 +84,44 @@ mais_gastam <- deputados_ordenados_decrescente %>% head(15)
 
 ```{r}
 
+agrupado_deputado_valor_total <- dados %>% filter (valorLíquido >= 0) %>% group_by(nomeParlamentar) %>% summarise(valorTotal = sum(valorLíquido))
+
+agrupado_deputado_gasto_exterior <- dados %>% filter (tipoDocumento == 2) %>%
+  group_by(nomeParlamentar) %>% summarise(valorExterior = sum(valorLíquido))
+
+agrupado_deputado_quant_exterior <- dados %>% filter (tipoDocumento == 2) %>%
+  group_by(nomeParlamentar) %>% summarise(quantExterior = n())
+
+result <- merge(agrupado_deputado_valor_total, agrupado_deputado_gasto_exterior)
+result2 <- merge(agrupado_deputado_valor_total, agrupado_deputado_quant_exterior)
+
+ggplot(data = result, aes(x = valorTotal, y = valorExterior)) + geom_point(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Valor total x Valor gasto exterior") + xlab("Valor Total") + ylab("Valor no exterior")
+
+ggplot(data = result2, aes(x = valorTotal, y = quantExterior)) + geom_point(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Valor total x Quantidade exterior") + xlab("Valor Total") + ylab("Quantidade exterior")
+
+cor(result$valorTotal, result$valorExterior)
+cor(result2$valorTotal, result2$quantExterior)
+
 ```
 
 
+# Opcional 1
+
+```{r}
+
+agrupado_estado_exterior <- dados %>% filter(tipoDocumento == 2, valorLíquido >= 0) %>% group_by(sgUF) %>% summarise(valorTotal = sum(valorLíquido))
+
+ggplot(data = agrupado_estado_exterior, aes(x = reorder(sgUF, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Uso do CEAP por estado para gastos no exterior") + xlab("Estado") + ylab("Valor gasto por estado (reais)")
+
+```
+
+# Opcional 2
+
+```{r}
+
+```
 
 
