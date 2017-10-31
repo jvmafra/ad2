@@ -102,11 +102,11 @@ Quais os estados que mais fazem uso da CEAP?
 Como podemos ver pela distribuição, dois estados se destacam e são outliers do boxplot. Em média, cada estado usou a CEAP 7256 vezes.
 
 ```{r}
-agrupado_por_estado_count <- dados %>% na.omit() %>% group_by(sgUF) %>% summarise(frequencia = n())
+agrupado_por_estado_count <- dados %>% group_by(sgUF) %>% summarise(frequencia = n()) %>% na.omit()
 
 summary(agrupado_por_estado_count)
 
-boxplot(agrupado_por_despesa_count$frequencia, ylab = "Nº de vezes que o estado usou a CEAP")
+boxplot(agrupado_por_estado_count$frequencia, ylab = "Nº de vezes que o estado usou a CEAP")
 
 
 ```
@@ -216,5 +216,26 @@ ggplot(data = agrupado_estado_exterior, aes(x = reorder(sgUF, valorTotal), y = v
 ```
 
 # Opcional 2
+
+```{r}
+
+dados_com_mes <- dados %>% mutate(mes = substr(dataEmissao, 1, 7))
+agrupado_deputado_mes <- dados_com_mes %>% filter(sgUF == "PB") %>% group_by(nomeParlamentar, mes, sgUF) %>%
+  summarise(valorGasto = sum(valorLíquido))
+
+colnames(limites)[1] <- "sgUF"
+
+deputados_mes_limites <- merge(x = agrupado_deputado_mes, y = limites, by = "sgUF")
+
+dif_deputados_mes_limites <- deputados_mes_limites %>% mutate(diferenca = valorGasto - limite_mensal)
+
+deputado_quant_vezes_ultrapassaram <- dif_deputados_mes_limites %>% filter (diferenca > 0) %>% group_by(nomeParlamentar) %>% summarise(quantVezesUltr = n())
+
+ggplot(data = deputado_quant_vezes_ultrapassaram, aes(x = reorder(nomeParlamentar, quantVezesUltr), y = quantVezesUltr)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Deputados que ultrapassaram a cota") + xlab("Nome do deputado") + ylab("Numero de vezes")
+
+
+```
+
 
 
