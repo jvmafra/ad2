@@ -17,43 +17,113 @@ limites <- read.csv("limiteMensalCEAP.csv")
 
 #QUESTAO 1
 
+
+Quais partidos mais fazem uso da CEAP?
+
+Para ter uma visão geral da quantidade de vezes que cada partido fez uso da CEAP, vamos
+resumir os dados e plotar um boxplot para ter uma ideia da distribuição do dados. Como podemos ver, o partido que mais fez uso fez 25824 vezes, que é representado pelo outlier do boxplot. Em média, cada partido usou a CEAP 6996 vezes.
+
 ```{r}
+
 agrupado_por_partido_count <- dados %>% na.omit() %>% group_by(sgPartido) %>% summarise(frequencia = n())
-agrupado_por_partido_valor <- dados %>% na.omit() %>% group_by(sgPartido) %>% summarise(valorTotal = sum(valorLíquido))
 
-ggplot(data = agrupado_por_partido_count, aes(x = reorder(sgPartido, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("Uso do CEAP por partido") + xlab("Partido") + ylab("Numero de vezes que o CEAP foi utilizado")
+summary(agrupado_por_partido_count$frequencia)
 
-ggplot(data = agrupado_por_partido_valor, aes(x = reorder(sgPartido, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("Uso do CEAP por partido") + xlab("Partido") + ylab("Valor total gasto em reais")
+boxplot(agrupado_por_partido_count$frequencia, ylab = "Nº de vezes que o partido fez uso")
 
 
 ```
 
+Agora vamos usar um gráfico de barras para mostrar os partidos que de fato mais usaram e menos usaram. Como podemos ver, os partidos maiores (PT, PMDB e PSDB) são os que mais fazem uso, o que é algo lógico devido ao número de deputados destes partidos. PRP, PMN e PTdoB são os que menos fazem uso (2, 4 e 9 respectivamente).
+
+```{r}
+
+ggplot(data = agrupado_por_partido_count, aes(x = reorder(sgPartido, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Uso do CEAP por partido") + xlab("Partido") + ylab("Numero de vezes que o CEAP foi utilizado")
+
+```
+
+Agora será mostrado um gráfico de barras que mostra os partidos que mais usam a CEAP considerando o valor em reais. Apesar do PT ser o partido que mais usa em termos de quantidade, o PMDB é o campeão quando considera-se o valor gasto, totalizando R$ 6 349 537,80. Os três últimos são os mesmos três levando em conta a quantidade de vezes, com mudanças apenas na ordem.
+
+
+```{r}
+
+agrupado_por_partido_valor <- dados %>% na.omit() %>% group_by(sgPartido) %>% summarise(valorTotal = sum(valorLíquido))
+
+ggplot(data = agrupado_por_partido_valor, aes(x = reorder(sgPartido, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Uso do CEAP por partido") + xlab("Partido") + ylab("Valor total gasto em reais")
+
+```
+
+
 
 #QUESTAO 2
 
+Quais os tipos de despesa mais comuns no uso da CEAP?
+
+Mais uma vez tendo uma visão geral dos dados e observando a distribuição dos dados pelo boxplot, podemos ver que existem dois tipos de despesa que destoam dos demais, sendo portanto outliers.
+
 ```{r}
+
 agrupado_por_despesa_count <- dados %>% group_by(tipoDespesa) %>% summarise(frequencia = n())
-agrupado_por_despesa_valor <- dados %>% group_by(tipoDespesa) %>% summarise(valorTotal = sum(valorLíquido))
+
+summary(agrupado_por_despesa_count)
+
+boxplot(agrupado_por_despesa_count$frequencia, ylab = "Nº de vezes que a despesa foi usada")
+
+```
+
+O gráfico abaixo nos permite ver que os tipos de despesa mais comuns são a emissão de bilhete aéreo e gastos com combustíveis e lubrificantes. Participação em cursos/palestras, e locação e fretamento de aeronaves e embarcações são os que menos aparecem.
+
+```{r}
 
 ggplot(data = agrupado_por_despesa_count, aes(x = reorder(tipoDespesa, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("Tipos de despesas mais comuns no CEAP") + xlab("Tipo de despesa") + ylab("Numero de vezes que o CEAP foi utilizado para despesa")
+  coord_flip() + ggtitle("Uso da CEAP por despesa") + xlab("Tipo de despesa") + ylab("Numero de vezes que o CEAP foi utilizado para despesa")
+
+```
+
+Observando agora o valor gasto em cada tipo de despesa, podemos notar uma surpresa. O tipo de despesa com maior valor gasto é o de divulgação de atividade parlamentar, apesar dele ser apenas o oitavo considerando a quantidade de vezes que aquela despesa foi utilizada. Gastos para divulgação com atividade parlamentar são solicitados poucas vezes, mas com valores alto em cada observação. 
+
+Gastos com combustíveis e lubrificantes, por sua vez, é a segunda despesa mais comum, mas apenas a sexta em termos de valor gasto. A situação é a aposta da divulgação com atividade parlamentar, já que um deputado pode, por exemplo, usar em um posto várias vezes pequenas quantias. Não há supresas nas últimas colocações. Participação em cursos/palestras, e locação e fretamento de aeronaves e embarcações representam os menores gastos também.
+
+```{r}
+agrupado_por_despesa_valor <- dados %>% group_by(tipoDespesa) %>% summarise(valorTotal = sum(valorLíquido))
+
 
 ggplot(data = agrupado_por_despesa_valor, aes(x = reorder(tipoDespesa, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("Tipos de despesas mais comuns no CEAP") + xlab("Tipo de despesa") + ylab("Valor gasto por despesa")
+  coord_flip() + ggtitle("Uso da CEAP por despesa") + xlab("Tipo de despesa") + ylab("Valor gasto por despesa (reais)")
 
 ```
 
 #QUESTAO 3
 
+Quais os estados que mais fazem uso da CEAP?
+
+Como podemos ver pela distribuição, dois estados se destacam e são outliers do boxplot. Em média, cada estado usou a CEAP 7256 vezes.
+
 ```{r}
-
 agrupado_por_estado_count <- dados %>% na.omit() %>% group_by(sgUF) %>% summarise(frequencia = n())
-agrupado_por_estado_valor <- dados %>% na.omit() %>% group_by(sgUF) %>% summarise(valorTotal = sum(valorLíquido))
 
+summary(agrupado_por_estado_count)
+
+boxplot(agrupado_por_despesa_count$frequencia, ylab = "Nº de vezes que o estado usou a CEAP")
+
+
+```
+
+Agora, com as barras, podemos ver os estados que mais usam a CEAP. São Paulo e Minas Gerais são os estados que mais se destoam dos demais e os últimos são Sergipe, Piauí e Roraima.
+
+```{r}
 ggplot(data = agrupado_por_estado_count, aes(x = reorder(sgUF, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("Uso do CEAP por estado") + xlab("Estado") + ylab("Numero de vezes que o CEAP foi utilizado para o estado")
+```
+
+Levando em conta os gastos em reais, temos uma inversão nas posições de São Paulo e Minas Gerais, mas os dois continuam no topo. Em termos de gastos, os três últimos agora são Sergipe, Distrito Federal e Amazonas. 
+
+Esperava-se realmente que estados mais ricos e com mais deputados realmente ocupassem o topo, porém tendo informação dos limites mensais que os deputados de um dado estado podem usar, temos que MG e SP estão nas últimas posições, possuindo então limites menores, o que torna um pouco estranho o fato deles liderarem esse quesito.
+
+```{r}
+agrupado_por_estado_valor <- dados %>% na.omit() %>% group_by(sgUF) %>% summarise(valorTotal = sum(valorLíquido))
 
 ggplot(data = agrupado_por_estado_valor, aes(x = reorder(sgUF, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("Uso do CEAP por estado") + xlab("Estado") + ylab("Valor gasto por estado")
@@ -62,23 +132,51 @@ ggplot(data = agrupado_por_estado_valor, aes(x = reorder(sgUF, valorTotal), y = 
 
 #QUESTAO 4
 
+Quais os parlamentares que mais gastam e menos gastam com a CEAP?
+
+Observando a distribuição geral dos dados, temos que o deputado que mais gastou, gastou cerca de 1,6 mi de reais. A mediana apresentou um valor bem elevado, sendo superior à média. 50% dos deputados gastou mais que 955 mil reais.
+
 ```{r}
 agrupado_por_deputado <- dados %>% filter (valorLíquido >= 0) %>% group_by(nomeParlamentar, sgPartido, sgUF) %>%
   summarise(valorTotal = sum(valorLíquido))
-deputados_ordenados_crescente <- agrupado_por_deputado[order(agrupado_por_deputado$valorTotal),]
+
+summary(agrupado_por_deputado$valorTotal)
+
+boxplot(agrupado_por_deputado$valorTotal, ylab = "Valor gasto")
+
+
+```
+
+Agora vamos usar um gráfico de barras para mostrar os 10 deputados que mais gastaram e os 10 que menos gastaram.
+
+```{r}
 deputados_ordenados_decrescente <- agrupado_por_deputado[order(decreasing = TRUE, agrupado_por_deputado$valorTotal),]
 
-menos_gastam <- deputados_ordenados_crescente %>% head(10)
+deputados_ordenados_crescente <- agrupado_por_deputado[order(agrupado_por_deputado$valorTotal),]
+```
+
+O deputado que mais gastou foi Edio Lopes, do partido PR de Roraima, seguido de Rocha, do PSDB do Acre. Fato curioso é que dos 10 deputados que mais gastam, 4 são do estado de Roraima (O já citado Edio Lopes, Abel Mesquita, Jhonathan de Jesus e Remídio Monai).
+
+```{r}
+
 mais_gastam <- deputados_ordenados_decrescente %>% head(10)
-
-ggplot(data = menos_gastam, aes(x = reorder(nomeParlamentar, -valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("15 deputados que menos gastam com CEAP") + xlab("Deputado") + ylab("Valor total gasto (em reais)")
-
 
 ggplot(data = mais_gastam, aes(x = reorder(nomeParlamentar, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("15 deputados que mais gastam com CEAP") + xlab("Deputado") + ylab("Valor total gasto (em reais)")
 
 ```
+
+O que deputado que menos gastou no período observado foi Camilo Cola, do PMDB do ES, com incríveis 62 centavos. Aqui, dos 10 que menos gastam, 4 são do PMDB (O já citado Camilo Cola, Eliseu Padilha, Marcelo Almeida e Renan Filho).
+
+```{r}
+
+menos_gastam <- deputados_ordenados_crescente %>% head(10)
+
+ggplot(data = menos_gastam, aes(x = reorder(nomeParlamentar, -valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("15 deputados que menos gastam com CEAP") + xlab("Deputado") + ylab("Valor total gasto (em reais)")
+
+```
+
 
 #QUESTAO 5
 
@@ -106,7 +204,6 @@ cor(result2$valorTotal, result2$quantExterior)
 
 ```
 
-
 # Opcional 1
 
 ```{r}
@@ -119,9 +216,5 @@ ggplot(data = agrupado_estado_exterior, aes(x = reorder(sgUF, valorTotal), y = v
 ```
 
 # Opcional 2
-
-```{r}
-
-```
 
 
