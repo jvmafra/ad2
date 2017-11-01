@@ -111,19 +111,19 @@ boxplot(agrupado_por_estado_count$frequencia, ylab = "Nº de vezes que o estado 
 
 ```
 
-Agora, com as barras, podemos ver os estados que mais usam a CEAP. São Paulo e Minas Gerais são os estados que mais se destoam dos demais e os últimos são Sergipe, Piauí e Roraima.
+Agora, com as barras, podemos ver os estados que mais usam a CEAP. São Paulo e Minas Gerais são os estados que mais se destoam dos demais e os últimos são Amazonas, Amapá e Distrito Federal.
 
 ```{r}
 ggplot(data = agrupado_por_estado_count, aes(x = reorder(sgUF, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("Uso do CEAP por estado") + xlab("Estado") + ylab("Numero de vezes que o CEAP foi utilizado para o estado")
 ```
 
-Levando em conta os gastos em reais, temos uma inversão nas posições de São Paulo e Minas Gerais, mas os dois continuam no topo. Em termos de gastos, os três últimos agora são Sergipe, Distrito Federal e Amazonas. 
+Levando em conta os gastos em reais, temos uma inversão nas posições de São Paulo e Minas Gerais, mas os dois continuam no topo. Distrito Federal e Amazonas seguem nas últimas posições, que agora também conta com o Mato Grosso.
 
 Esperava-se realmente que estados mais ricos e com mais deputados realmente ocupassem o topo, porém tendo informação dos limites mensais que os deputados de um dado estado podem usar, temos que MG e SP estão nas últimas posições, possuindo então limites menores, o que torna um pouco estranho o fato deles liderarem esse quesito.
 
 ```{r}
-agrupado_por_estado_valor <- dados %>% na.omit() %>% group_by(sgUF) %>% summarise(valorTotal = sum(valorLíquido))
+agrupado_por_estado_valor <- dados %>% group_by(sgUF) %>% summarise(valorTotal = sum(valorLíquido)) %>% na.omit()
 
 ggplot(data = agrupado_por_estado_valor, aes(x = reorder(sgUF, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("Uso do CEAP por estado") + xlab("Estado") + ylab("Valor gasto por estado")
@@ -161,7 +161,7 @@ O deputado que mais gastou foi Edio Lopes, do partido PR de Roraima, seguido de 
 
 mais_gastam <- deputados_ordenados_decrescente %>% head(10)
 
-ggplot(data = mais_gastam, aes(x = reorder(nomeParlamentar, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+ggplot(data = mais_gastam, aes(x = reorder(sprintf("%s - %s/%s", nomeParlamentar, sgPartido, sgUF), valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("15 deputados que mais gastam com CEAP") + xlab("Deputado") + ylab("Valor total gasto (em reais)")
 
 ```
@@ -172,7 +172,7 @@ O que deputado que menos gastou no período observado foi Camilo Cola, do PMDB d
 
 menos_gastam <- deputados_ordenados_crescente %>% head(10)
 
-ggplot(data = menos_gastam, aes(x = reorder(nomeParlamentar, -valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
+ggplot(data = menos_gastam, aes(x = reorder(sprintf("%s - %s/%s", nomeParlamentar, sgPartido, sgUF), -valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("15 deputados que menos gastam com CEAP") + xlab("Deputado") + ylab("Valor total gasto (em reais)")
 
 ```
@@ -180,35 +180,50 @@ ggplot(data = menos_gastam, aes(x = reorder(nomeParlamentar, -valorTotal), y = v
 
 #QUESTAO 5
 
+Existe correlação entre a quantidade de gastos no exterior e o valor restituído da CEAP?
+
+O gráfico de dispersão abaixo relaciona as variáveis quantidade de gastos que os deputados fizeram no exterior (Apenas 69 deputados possuem esse tipo de gasto) e o valor total restituído pela CEAP, independente do tipo de gasto. Como podemos ver, não existe correlação entre as duas. O deputado que mais vezes gastou no exterior (Afonso Motta), tem um valor total restituído de 1,2 mi, não estando sequer no top 20.
+
+Muitos deputados apresentam valor total restituído muito alto, mas praticamente não gastaram no exterior.
+
+Calculando a correlação exata entre as duas variáveis, obtém-se um valor de -0.03486, comprovando que é uma relação muito fraca.
+
 ```{r}
 
 agrupado_deputado_valor_total <- dados %>% filter (valorLíquido >= 0) %>% group_by(nomeParlamentar) %>% summarise(valorTotal = sum(valorLíquido))
 
-agrupado_deputado_gasto_exterior <- dados %>% filter (tipoDocumento == 2) %>%
-  group_by(nomeParlamentar) %>% summarise(valorExterior = sum(valorLíquido))
+#agrupado_deputado_gasto_exterior <- dados %>% filter (tipoDocumento == 2) %>%
+#  group_by(nomeParlamentar) %>% summarise(valorExterior = sum(valorLíquido))
 
 agrupado_deputado_quant_exterior <- dados %>% filter (tipoDocumento == 2) %>%
   group_by(nomeParlamentar) %>% summarise(quantExterior = n())
 
-result <- merge(agrupado_deputado_valor_total, agrupado_deputado_gasto_exterior)
+#result <- merge(agrupado_deputado_valor_total, agrupado_deputado_gasto_exterior)
 result2 <- merge(agrupado_deputado_valor_total, agrupado_deputado_quant_exterior)
 
-ggplot(data = result, aes(x = valorTotal, y = valorExterior)) + geom_point(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("Valor total x Valor gasto exterior") + xlab("Valor Total") + ylab("Valor no exterior")
+#ggplot(data = result, aes(x = valorTotal, y = valorExterior)) + geom_point(stat = "identity", fill="steelblue") +
+#  coord_flip() + ggtitle("Valor total x Valor gasto exterior") + xlab("Valor Total") + #ylab("Valor no exterior")
 
-ggplot(data = result2, aes(x = valorTotal, y = quantExterior)) + geom_point(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("Valor total x Quantidade exterior") + xlab("Valor Total") + ylab("Quantidade exterior")
+ggplot(data = result2, aes(x = valorTotal, y = quantExterior)) + geom_point(stat = "identity", fill="steelblue") + ggtitle("Valor total x Quantidade exterior") + xlab("Valor Total") + ylab("Quantidade exterior")
 
-cor(result$valorTotal, result$valorExterior)
+#cor(result$valorTotal, result$valorExterior)
 cor(result2$valorTotal, result2$quantExterior)
 
 ```
 
 # Opcional 1
 
+Quais os estados cujos deputados gastam mais no exterior? Quais os estados cujos deputados gastam menos no exterior?
+
+Dos 27 estados, apenas 22 possuem deputados que gastaram algo no exterior. Minas Gerais e São Paulo lideram o ranking, assim como lideravam o ranking considerando os gastos com qualquer tipo de despesa mostrado na questão 3.
+
+
+Amapá, Distrito Federal, Goiás, Mato Grosso do Sul, Rio Grande do Norte não aparecem na lista, então seus deputados totalizam 0 reais em gastos no exterior.
+
+
 ```{r}
 
-agrupado_estado_exterior <- dados %>% filter(tipoDocumento == 2, valorLíquido >= 0) %>% group_by(sgUF) %>% summarise(valorTotal = sum(valorLíquido))
+agrupado_estado_exterior <- dados %>% filter(tipoDocumento == 2, valorLíquido >= 0) %>% group_by(sgUF, tipoDocumento) %>% summarise(valorTotal = sum(valorLíquido))
 
 ggplot(data = agrupado_estado_exterior, aes(x = reorder(sgUF, valorTotal), y = valorTotal)) + geom_bar(stat = "identity", fill="steelblue") +
   coord_flip() + ggtitle("Uso do CEAP por estado para gastos no exterior") + xlab("Estado") + ylab("Valor gasto por estado (reais)")
@@ -217,10 +232,19 @@ ggplot(data = agrupado_estado_exterior, aes(x = reorder(sgUF, valorTotal), y = v
 
 # Opcional 2
 
+Quais os deputados que mais ultrapassam o limite de CEAP do seu estado?
+
+Filtrando apenas os deputados paraibanos, podemos agrupar pelos meses observados nos dados (envolvendo 2015, 2016 e 2017) e ver em quais meses cada deputado ultrapassou o limite pré-definido. No fim, temos quantas vezes os deputados do gráfico ultrapassaram o limite.
+
+O deputados que não aparecem no gráfico não ultrapassaram o limite em nenhum mês. São eles: Major Fábio, Marcondes Gadelha, Nilda Gondim, Pedro Cunha Lima e Ruy Carneiro.
+
+Os líderes são Rômulo Gouveia, que ultrapassou o limite em 20 meses e Veneziano Vital, que ultrapassou em 16 meses.
+
+
 ```{r}
 
 dados_com_mes <- dados %>% mutate(mes = substr(dataEmissao, 1, 7))
-agrupado_deputado_mes <- dados_com_mes %>% filter(sgUF == "PB") %>% group_by(nomeParlamentar, mes, sgUF) %>%
+agrupado_deputado_mes <- dados_com_mes %>% filter(sgUF == "PB") %>% group_by(nomeParlamentar, mes, sgUF, sgPartido) %>%
   summarise(valorGasto = sum(valorLíquido))
 
 colnames(limites)[1] <- "sgUF"
@@ -229,10 +253,10 @@ deputados_mes_limites <- merge(x = agrupado_deputado_mes, y = limites, by = "sgU
 
 dif_deputados_mes_limites <- deputados_mes_limites %>% mutate(diferenca = valorGasto - limite_mensal)
 
-deputado_quant_vezes_ultrapassaram <- dif_deputados_mes_limites %>% filter (diferenca > 0) %>% group_by(nomeParlamentar) %>% summarise(quantVezesUltr = n())
+deputado_quant_vezes_ultrapassaram <- dif_deputados_mes_limites %>% filter (diferenca > 0) %>% group_by(nomeParlamentar, sgPartido) %>% summarise(quantVezesUltr = n())
 
-ggplot(data = deputado_quant_vezes_ultrapassaram, aes(x = reorder(nomeParlamentar, quantVezesUltr), y = quantVezesUltr)) + geom_bar(stat = "identity", fill="steelblue") +
-  coord_flip() + ggtitle("Deputados que ultrapassaram a cota") + xlab("Nome do deputado") + ylab("Numero de vezes")
+ggplot(data = deputado_quant_vezes_ultrapassaram, aes(x = reorder(sprintf("%s - %s", nomeParlamentar, sgPartido), quantVezesUltr), y = quantVezesUltr)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Deputados da PB que ultrapassaram a cota") + xlab("Nome do deputado") + ylab("Numero de meses que ultrapassou a cota")
 
 
 ```
