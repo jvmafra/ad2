@@ -1,0 +1,69 @@
+---
+title: "analise_gastos_deputados_parte2"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+gastos <- read.csv("dadosCEAP.csv")
+```
+
+#PERGUNTA 1:
+
+Focando no tipo de despesa com o qual os parlamentares mais usam a CEAP (Divulgação de atividade parlamentar), existe algum fornecedor que se destaca, ou seja, que aparece muito em relação aos outros?
+
+RESPOSTA ESPERADA: Espero que existam empresas que apareçam mais que outras, ou seja, que sejam mais consolidadas nesse mercado e que portanto forneçam serviço para vários deputados diferentes.
+
+Na análise, serão levados em conta apenas os deputados paraibanos.
+
+
+```{r}
+
+gastos_pb <- gastos %>% filter (sgUF == "PB")
+gastos.atividade <- gastos_pb %>% filter(tipoDespesa == "DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR.")
+
+agrupado.fornecedor <- gastos.atividade %>% group_by(fornecedor) %>% summarise(frequencia = n())
+
+agrupado.fornecedor.top.15 <- agrupado.fornecedor[order(decreasing = TRUE, agrupado.fornecedor$frequencia),] %>% head(15)
+
+ggplot(data = agrupado.fornecedor.top.15, aes(x = reorder(fornecedor, frequencia), y = frequencia)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Fornecedores do serviço de divulgação") + xlab("Fornecedor") + ylab("Numero de serviços prestados na PB")
+
+```
+
+```{r}
+
+fornecedor.josely <- gastos.atividade %>% filter (fornecedor == "JOSELY FERNANDA DO NASCIMENTO")
+
+agrupado.deputado <- fornecedor.josely %>% group_by(nomeParlamentar) %>% summarise(valorGasto = sum(valorLíquido))
+
+ggplot(data = agrupado.deputado, aes(x = reorder(nomeParlamentar, valorGasto), y = valorGasto)) + geom_bar(stat = "identity", fill="steelblue") +
+  coord_flip() + ggtitle("Gastos com fornecedora Josely") + xlab("Deputado") + ylab("Valor gasto")
+
+```
+
+#PERGUNTA 2:
+
+Existe algum periodo do ano no qual os deputados costumam usar mais o dinheiro da CEAP?
+
+RESPOSTA ESPERADA: Acredito que não exista e que os valores gastos estejam equilibrados entre todos os meses observados.
+
+```{r}
+gastos.com.mes <- gastos %>% mutate(mes = substr(dataEmissao, 1, 7))
+
+agrupado.mes <- gastos.com.mes %>% group_by(mes) %>% summarise(valorTotal = sum(valorLíquido)) %>% na.omit()
+
+
+ggplot(data = agrupado.mes, aes(x = mes, y = valorTotal)) + geom_point(stat = "identity") + ggtitle("Gastos totais mes a mes") + xlab("Deputado") + ylab("Valor gasto")
+
+
+```
+
+
+
+
