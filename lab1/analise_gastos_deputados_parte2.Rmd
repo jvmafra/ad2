@@ -54,18 +54,15 @@ Existe algum periodo do ano no qual os deputados costumam usar mais o dinheiro d
 RESPOSTA ESPERADA: Acredito que não exista e que os valores gastos estejam equilibrados entre todos os meses observados.
 
 ```{r}
-gastos.com.mes <- gastos %>% mutate(mes = substr(dataEmissao, 1, 7))
+gastos.com.mes <- gastos %>% mutate(mes = substr(dataEmissao, 1, 7)) %>% mutate(ano = substr(dataEmissao, 1,4))
 
-agrupado.mes <- gastos.com.mes %>% group_by(mes) %>% summarise(valorTotal = sum(valorLíquido)) %>% na.omit()
+agrupado.mes <- gastos.com.mes %>% group_by(mes, ano) %>% summarise(valorTotal = sum(valorLíquido)) %>% na.omit()
 
-agrupado.mes.2016 <- agrupado.mes %>% filter (substr(mes, 1, 4) == "2016") %>% mutate(mes = substr(mes, 6,7))
-agrupado.mes.2015 <- agrupado.mes %>% filter (substr(mes, 1, 4) == "2015") %>% mutate(mes = substr(mes, 6,7))
-
-
-ggplot(data = agrupado.mes.2016, aes(x = mes, y = valorTotal)) + geom_point(stat = "identity") + ggtitle("Gastos totais mes a mes (2016)") + xlab("Mes") + ylab("Valor gasto")
+agrupado.mes.2015.2016 <- agrupado.mes %>% filter (substr(mes, 1, 4) == "2016" || substr(mes, 1, 4) == "2015") %>% mutate(mes_gasto = substr(mes, 6, 7))
 
 
-ggplot(data = agrupado.mes.2015, aes(x = mes, y = valorTotal)) + geom_point(stat = "identity") + ggtitle("Gastos totais mes a mes (2015)") + xlab("Mes") + ylab("Valor gasto")
+ggplot(data = agrupado.mes.2015.2016, aes(x = mes_gasto, y = valorTotal, colour = ano, group = ano)) + geom_point() + geom_line() + ggtitle("Gastos totais mes a mes (2015 e 2016)") + xlab("Mes") + ylab("Valor gasto")
+
 
 ```
 
