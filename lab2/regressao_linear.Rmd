@@ -1,0 +1,37 @@
+---
+title: "Regressao Linear - Eleicoes 2014"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(GGally)
+library(broom)
+```
+
+```{r}
+eleicoes2014 <- read.csv("~/workspace/ad2/lab2/eleicoes2014.csv", encoding = "latin1")
+eleicoes2014 <- eleicoes2014 %>% select(-cargo, -recursos_de_outros_candidatos.comites, -recursos_de_partidos, -recursos_de_pessoas_físicas, -recursos_de_pessoas_juridicas, -recursos_proprios, -setor_economico_receita, -setor_economico_despesa)
+                                        
+```
+
+```{r}
+
+```
+
+
+```{r}
+dados <- eleicoes2014 %>% select(-sequencial_candidato, -nome, -numero_cadidato)
+linear.model <- lm(votos ~ ., data = dados)
+summary(linear.model)
+plot(linear.model)
+tidy(linear.model, conf.int = TRUE)
+```
+
+
+
+
+
