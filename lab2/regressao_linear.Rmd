@@ -10,26 +10,56 @@ library(ggplot2)
 library(readr)
 library(GGally)
 library(broom)
+library(corrgram)
 ```
 
 ```{r}
-eleicoes2014 <- read.csv("~/workspace/ad2/lab2/eleicoes2014.csv", encoding = "latin1")
-eleicoes2014 <- eleicoes2014 %>% select(-cargo, -recursos_de_outros_candidatos.comites, -recursos_de_partidos, -recursos_de_pessoas_físicas, -recursos_de_pessoas_juridicas, -recursos_proprios, -setor_economico_receita, -setor_economico_despesa)
-                                        
-```
-
-```{r}
-
-```
-
-
-```{r}
-dados <- eleicoes2014 %>% select(-sequencial_candidato, -nome, -numero_cadidato)
-linear.model <- lm(votos ~ ., data = dados)
+eleicoes2014 <- read.csv("~/workspace/ad2/lab2/eleicoes2014.csv", encoding = "latin1") %>% select(-cargo)
+linear.model <- lm(votos ~ ., data = eleicoes2014)
 summary(linear.model)
-plot(linear.model)
-tidy(linear.model, conf.int = TRUE)
 ```
+
+```{r}
+eleicoes2014.filtered <- eleicoes2014 %>% select(-sequencial_candidato, -nome, -numero_cadidato, -recursos_de_outros_candidatos.comites, -recursos_de_partidos, -recursos_de_pessoas_físicas, -recursos_de_pessoas_juridicas, -recursos_proprios, -setor_economico_receita, -setor_economico_despesa)
+
+linear.model.filtered <- lm(votos ~ ., data = eleicoes2014.filtered)
+
+summary(linear.model.filtered)
+summary(linear.model.filtered)$r.squared
+summary(linear.model.filtered)$adj.r.squared
+plot(linear.model.filtered)
+glance(linear.model.filtered)
+```
+
+
+```{r}
+eleicoes2014.filtered.variables <- eleicoes2014.filtered %>% select(quantidade_doacoes, quantidade_doadores, total_receita, media_receita, quantidade_despesas, quantidade_fornecedores, total_despesa, media_despesa, votos)
+
+names(eleicoes2014.filtered.variables) <- c("quant_doacoes", "quant_doadores", "total_rec", "media_rec", "quant_desp", "quant_forn", "total_desp", "media_desp", "votos")
+
+ggpairs(eleicoes2014.filtered.variables)
+
+new.df <- eleicoes2014.filtered.variables %>% select(quant_doadores, total_desp, media_rec, votos)
+
+linear.model2 <- lm(votos ~ ., data = new.df)
+summary(linear.model2)
+glance(linear.model2)
+plot(linear.model2)
+
+model.res <- resid(linear.model2)
+
+plot(model.res)
+
+mse <- mean(residuals(linear.model2)^2)
+rmse <- sqrt(mse)
+rss <- sum(residuals(linear.model2)^2)
+rse <- sqrt(sum(residuals(linear.model2)^2)/linear.model$df.residual) 
+rse
+```
+
+
+
+
 
 
 
