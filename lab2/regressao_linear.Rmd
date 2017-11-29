@@ -10,51 +10,79 @@ library(ggplot2)
 library(readr)
 library(GGally)
 library(broom)
-library(corrgram)
+library(olsrr)
 ```
 
 ```{r}
 eleicoes2014 <- read.csv("~/workspace/ad2/lab2/eleicoes2014.csv", encoding = "latin1") %>% select(-cargo)
-linear.model <- lm(votos ~ ., data = eleicoes2014)
-summary(linear.model)
+
+plotGraficoResiduos <- function(linear.model){
+  plot(fitted(linear.model), residuals(linear.model), xlab = "Predição", ylab = "Resíduos")
+  abline(h=0, lty=2)
+  lines(smooth.spline(fitted(linear.model), residuals(linear.model)))
+}
+
+showR2RSE <- function(linear.model){
+  print(paste("R² ajustado: ", summary(linear.model)$adj.r.squared))
+  print(paste("RSE: ", summary(linear.model)$sigma))
+}
 ```
+
+#Q1 - Um modelo de regressão múltipla com todas as variáveis é plausível para explicar a variação em y (número de votos)? Justifique sua resposta.
+
+Primeiramente, vamos excluir dos dados todas as variáveis com muitos valores NA, que nada acrescentam a nossa análise. Além delas, serão desconsideradas as variáveis sequencial_candidato, nome e numero_candidato, que não fazem sentido fazer parte de um modelo que explique o número de votos de um deputado.
+
+Como podemos ver, o R² ajustado foi de aproximadamente 0.45, indicando que o modelo encontrado consegue explicar aproximadamente 45% da variabilidade dos dados. Tendo em vista que muitos fatores foram desconsiderados por não estarem nos dados e fatores que talvez não sirvam para explicar a quantidade de votos foram considerados, podemos dizer que o modelo encontrado é plausível, já que conseguimos explicar quase metade dos dados.
+
+O desvião padrão dos resíduos (RSE) foi de 33450.
+
+Podemos também verificar o plot dos resíduos x valores preditos. Um modelo é considerado bom quando os valores preditos estão distribuídos simetricamente ao redor da reta que representa o resíduo = 0. Isso acontece para boa parte dos valores, mas como podemos ver existe um outlier de algum deputado que teve uma quantidade de votos muito maior do que foi predito pelo modelo. Celso Russomano obteve 1 524 361 votos, um valor muito distante dos demais. Jair Bolsonaro, segundo deputado mais votado, obteve 464 572 votos, por exemplo.
 
 ```{r}
 eleicoes2014.filtered <- eleicoes2014 %>% select(-sequencial_candidato, -nome, -numero_cadidato, -recursos_de_outros_candidatos.comites, -recursos_de_partidos, -recursos_de_pessoas_físicas, -recursos_de_pessoas_juridicas, -recursos_proprios, -setor_economico_receita, -setor_economico_despesa)
 
 linear.model.filtered <- lm(votos ~ ., data = eleicoes2014.filtered)
 
-summary(linear.model.filtered)
-summary(linear.model.filtered)$r.squared
-summary(linear.model.filtered)$adj.r.squared
-plot(linear.model.filtered)
-glance(linear.model.filtered)
+showR2RSE(linear.model.filtered)
+plotGraficoResiduos(linear.model.filtered)
 ```
 
 
+#Q2. Todas as variáveis são úteis para o modelo de regressão? Há variáveis redudantes? Justifique sua resposta em ambos os casos.
+
+Não, pois muitas das variáveis apresentam um p-valor alto, indicando que elas são irrelevantes para o modelo. Usando o método forward selection para selecionar variáveis baseado no p-valor, temos que os fatores a seguir são os mais úteis.
+
 ```{r}
-eleicoes2014.filtered.variables <- eleicoes2014.filtered %>% select(quantidade_doacoes, quantidade_doadores, total_receita, media_receita, quantidade_despesas, quantidade_fornecedores, total_despesa, media_despesa, votos)
+ols_step_forward(linear.model.filtered)
+```
 
-names(eleicoes2014.filtered.variables) <- c("quant_doacoes", "quant_doadores", "total_rec", "media_rec", "quant_desp", "quant_forn", "total_desp", "media_desp", "votos")
+Levando em consideração as variáveis numéricas selecionadas, vamos checar se existe correlação entre elas e assim detectar as redundâncias.
 
-ggpairs(eleicoes2014.filtered.variables)
+O total de despesas tem uma correlação forte (coeficiente acima de 0.7) com a quantidade de despesas, a receita total e quantidade de fornedores do deputado, o que realmente faz sentido, já que se um deputado tem uma receita maior e gasta muitas vezes, ele tende a ter um total de despesas maior também. Esse é um exemplo de redundância onde talvez seja o caso usar apenas a variável total de despesas representando essas outras.
 
-new.df <- eleicoes2014.filtered.variables %>% select(quant_doadores, total_desp, media_rec, votos)
+Quantidade de doadores e quantidade de doações também apresentam uma correlação alta (coeficiente acima de 0.8) que faz sentido.
 
-linear.model2 <- lm(votos ~ ., data = new.df)
-summary(linear.model2)
-glance(linear.model2)
-plot(linear.model2)
+```{r}
+filtered.variables <- eleicoes2014.filtered %>% select(total_receita, quantidade_doadores, media_receita, quantidade_despesas, quantidade_fornecedores, media_despesa, total_despesa, quantidade_doacoes)
 
-model.res <- resid(linear.model2)
+names(filtered.variables) <- c("tot_rec", "quant_doad", "med_rec", "quant_desp", "quant_forn", "med_desp", "tot_desp", "quant_doac")
 
-plot(model.res)
+ggpairs(filtered.variables)
 
-mse <- mean(residuals(linear.model2)^2)
-rmse <- sqrt(mse)
-rss <- sum(residuals(linear.model2)^2)
-rse <- sqrt(sum(residuals(linear.model2)^2)/linear.model$df.residual) 
-rse
+
+```
+
+#Q3.No caso de haver variáveis pouco explicativas e/ou redudantes, construa um novo modelo sem essas variáveis e o compare ao modelo com todas as variáveis
+
+
+```{r}
+
+new.filtered.variables <- eleicoes2014 %>% filter (nome != "CELSO UBIRAJARA RUSSOMANNO") %>% select(quantidade_doacoes, media_receita, media_despesa, total_despesa, UF, sexo, votos)
+
+new.linear.model <- lm(votos ~ ., data = new.filtered.variables)
+
+showR2RSE(new.linear.model)
+plotGraficoResiduos(new.linear.model)
 ```
 
 
