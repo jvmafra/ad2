@@ -26,6 +26,8 @@ showR2RSE <- function(linear.model){
   print(paste("R² ajustado: ", summary(linear.model)$adj.r.squared))
   print(paste("RSE: ", summary(linear.model)$sigma))
 }
+
+boxplot(eleicoes2014$votos)
 ```
 
 #Q1 - Um modelo de regressão múltipla com todas as variáveis é plausível para explicar a variação em y (número de votos)? Justifique sua resposta.
@@ -65,9 +67,9 @@ Quantidade de doadores e quantidade de doações também apresentam uma correla�
 ```{r}
 filtered.variables <- eleicoes2014.filtered %>% select(total_receita, quantidade_doadores, media_receita, quantidade_despesas, quantidade_fornecedores, media_despesa, total_despesa, quantidade_doacoes)
 
-names(filtered.variables) <- c("tot_rec", "quant_doad", "med_rec", "quant_desp", "quant_forn", "med_desp", "tot_desp", "quant_doac")
+names(filtered.variables) <- c("tot_rec", "quant_doadores", "med_receita", "quant_despesa", "quant_forn", "med_despesa", "tot_despesa", "quant_doacoes")
 
-ggpairs(filtered.variables)
+ggcorr(filtered.variables, hjust = 0.80, vjust=1.5, size = 3, label = TRUE, var.position = 'diagonal', lower = TRUE)
 
 
 ```
