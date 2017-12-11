@@ -1,0 +1,87 @@
+---
+title: "Predição de votos dos deputados"
+author: "João Victor Barroso Mafra"
+date: "11 de dezembro de 2017"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(caret)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(825)
+```
+
+
+
+
+```{r}
+eleicoes2014 <- read.csv("~/workspace/ad2/lab2/eleicoes2014.csv", encoding = "latin1") %>% select(-cargo)
+
+eleicoes2014.filtered <- eleicoes2014 %>% select(-sequencial_candidato, -nome, -numero_cadidato, -recursos_de_outros_candidatos.comites, -recursos_de_partidos, -recursos_de_pessoas_físicas, -recursos_de_pessoas_juridicas, -recursos_proprios, -setor_economico_receita, -setor_economico_despesa)
+```
+
+
+#1. Usando todas as variáveis disponíveis, tune (usando validação cruzada): (i) um modelo de regressão Ridge, (ii) um modelo de regressão Lasso e (iii) um modelo KNN. Para os modelos de regressão linear, o parâmetro a ser tunado é o lambda (penalização dos coeficientes) e o KNN o número de vizinhos.
+
+REGRESSÃO RIDGE:
+
+```{r}
+
+set.seed(825)
+
+fitControl <- trainControl(method = "cv",
+                           number = 5)
+
+ridge.model.cv <- train(votos ~ ., 
+               data = eleicoes2014.filtered,
+               method = "ridge",
+               trControl = fitControl,
+               tuneLength = 10,
+               preProcess = c('scale', 'center'))
+
+ridge.model.cv
+```
+
+REGRESSÃO LASSO:
+
+```{r}
+
+lasso.model.cv <- train(votos ~ ., 
+               data = eleicoes2014.filtered,
+               method = "lasso",
+               trControl = fitControl,
+               tuneLength = 10,
+               preProcess = c('scale', 'center'))
+
+lasso.model.cv
+
+```
+
+
+REGRESSÃO KNN:
+
+```{r}
+knn.model.cv <- train(votos ~ ., 
+               data = eleicoes2014.filtered,
+               method = "knn",
+               trControl = fitControl,
+               tuneLength = 10,
+               preProcess = c('scale', 'center'))
+
+knn.model.cv
+
+```
+
+
+
+
+
+
