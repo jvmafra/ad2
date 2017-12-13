@@ -11,6 +11,7 @@ library(dplyr)
 library(ggplot2)
 library(readr)
 library(caret)
+library(elasticnet)
 ```
 
 
@@ -19,13 +20,23 @@ knitr::opts_chunk$set(echo = TRUE)
 set.seed(825)
 ```
 
+ANALISANDO OS DADOS INICIAIS:
 
-
+Observando a distribuição dos votos através de um boxplot, podemos ver que existe um outlier, ou seja, um deputado que obteve muito mais votos que os demais, e isso pode acabar prejudicando a construção de nossos modelos.
 
 ```{r}
 eleicoes2014 <- read.csv("~/workspace/ad2/lab2/eleicoes2014.csv", encoding = "latin1") %>% select(-cargo)
 
-eleicoes2014.filtered <- eleicoes2014 %>% select(-sequencial_candidato, -nome, -numero_cadidato, -recursos_de_outros_candidatos.comites, -recursos_de_partidos, -recursos_de_pessoas_físicas, -recursos_de_pessoas_juridicas, -recursos_proprios, -setor_economico_receita, -setor_economico_despesa)
+boxplot(eleicoes2014$votos)
+```
+
+Assim, será eliminado o deputado que é outlier e ainda variáveis que não influenciam na quantidade de votos de algum parlamentar (id do candidato, seu nome e seu número), assim como variáveis cuja maioria das linhas é composta por valores desconhecidos NA. Feito isso, iniciaremos de fato o treinamento dos modelos.
+
+```{r}
+
+eleicoes2014 <- eleicoes2014 %>% filter(nome != "CELSO UBIRAJARA RUSSOMANNO")
+
+eleicoes2014.filtered <- eleicoes2014 %>% select(-sequencial_candidato, -nome, -numero_cadidato, -recursos_de_outros_candidatos.comites, -recursos_de_partidos, -recursos_de_pessoas_físicas, -recursos_de_pessoas_juridicas, -recursos_proprios, -setor_economico_receita, -setor_economico_despesa) 
 ```
 
 
@@ -35,7 +46,7 @@ Para todos os modelos, foi utilizada a validação cruzada com 5 blocos. Em rela
 
 REGRESSÃO RIDGE:
 
-Usando a regressão ridge, o lâmbda escolhido foi 0.0421, com um RMSE obtido de 31753.45
+Usando a regressão ridge, o lâmbda escolhido foi 0.0421, com um RMSE obtido de 26081.
 
 ```{r}
 
@@ -56,7 +67,7 @@ ridge.model.cv
 
 REGRESSÃO LASSO:
 
-Para o Lasso, o lâmbda escolhido foi de 0.2777, que apresentou um RMSE de 31934.46.
+Para o Lasso, o lâmbda escolhido foi de 0.3666, que apresentou um RMSE de 26062.97.
 
 ```{r}
 
@@ -71,12 +82,14 @@ lasso.model.cv <- train(votos ~ .,
 
 lasso.model.cv
 
+lasso.model.cv$finalModel
+
 ```
 
 
 REGRESSÃO KNN:
 
-Para a regressão KNN, o número K dos melhores vizinhos escolhido foi 15, com um RMSE de 33998.43.
+Para a regressão KNN, o número K dos melhores vizinhos escolhido foi 11, com um RMSE de 28160.95.
 
 ```{r}
 
@@ -95,15 +108,15 @@ knn.model.cv
 
 #2. Compare os três modelos em termos do erro RMSE de validação cruzada.
 
-RMSE da Regressão Ridge: 31753
-RMSE da Regressão Lasso: 31934
-RMSE da Regressão KNN: 33998
+RMSE da Regressão Ridge: 26081
+RMSE da Regressão Lasso: 26062
+RMSE da Regressão KNN: 28160
 
-O modelo com menor erro quadrático médio foi o gerado pela Regressão Ridge. Em seguida, com um erro não tão maior, vem o modelo gerado pelo Lasso e por último, o modelo gerado pela Regressão KNN, com erro quadrático médio maior que os outros dois.
+O modelo com menor erro quadrático médio foi o gerado pela Regressão Lasso. Em seguida, com um erro muito próximo, vem o modelo gerado pelo Ridge e por último, o modelo gerado pela Regressão KNN, com erro quadrático médio maior que os outros dois.
 
 #3. Quais as variáveis mais importantes segundo o modelo de regressão Ridge e Lasso?  Variáveis foram descartadas pelo Lasso? Quais?
 
-Analisando primeiramente o modelo de regressão Ridge, temos que as variáveis mais importantes foram o total da receita do candidato (com overaal igual a 100) e o total de despesas do mesmo ( com overall igual a 97). Em seguida, um pouco mais distantes das duas primeiras, aparecem a quantidade de despesas (com overall 63) e a quantidade de doações que o deputado recebeu (overall igual a 49).
+Os dois modelos nos fornecem o mesmo resultado para a importância das variáveis. Temos que as mais importantes foram o total da receita do candidato (com overall igual a 100) e o total de despesas do mesmo (com overall igual a 97). Em seguida, um pouco mais distantes das duas primeiras, aparecem a quantidade de despesas (com overall 57) e a quantidade de doações que o deputado recebeu (overall igual a 51).
 
 ```{r}
 ggplot(varImp(ridge.model.cv)) +
@@ -112,8 +125,25 @@ ggplot(varImp(ridge.model.cv)) +
 ```
 
 ```{r}
-predict.enet(lasso.model.cv$finalModel, type='coefficients', s=lasso.model.cv$bestTune$fraction, mode='fraction')
+ggplot(varImp(lasso.model.cv)) +
+  geom_bar(stat="identity") +
+  labs(title="Importância das variáveis usando Lasso", y="Importância", x="Variável")
 ```
+
+Analisando os coeficientes gerados no Lasso, temos que os com valor 0 são eliminados por ele. Abaixo, temos as variáveis
+
+```{r}
+coefficients.lasso <- predict.enet(lasso.model.cv$finalModel, type='coefficients', s=lasso.model.cv$bestTune$fraction, mode='fraction')$coefficients
+
+coefficients.lasso.model <- as.data.frame(coefficients.lasso)
+
+coefficients.lasso.model <- data.frame(variavel=rownames(coefficients.lasso.model), coeficiente=coefficients.lasso)
+
+coefficients.lasso.model.filtered <- coefficients.lasso.model %>% filter(coeficiente == 0)
+
+coefficients.lasso.model.filtered
+```
+
 
 
 
