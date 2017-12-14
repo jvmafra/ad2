@@ -82,14 +82,12 @@ lasso.model.cv <- train(votos ~ .,
 
 lasso.model.cv
 
-lasso.model.cv$finalModel
-
 ```
 
 
 REGRESSÃO KNN:
 
-Para a regressão KNN, o número K dos melhores vizinhos escolhido foi 11, com um RMSE de 28160.95.
+Para a regressão KNN, o número K dos melhores vizinhos escolhido foi 9, com um RMSE de 28117.28.
 
 ```{r}
 
@@ -108,9 +106,9 @@ knn.model.cv
 
 #2. Compare os três modelos em termos do erro RMSE de validação cruzada.
 
-RMSE da Regressão Ridge: 26081
-RMSE da Regressão Lasso: 26062
-RMSE da Regressão KNN: 28160
+RMSE da Regressão Ridge: 26081;
+RMSE da Regressão Lasso: 26062;
+RMSE da Regressão KNN: 28160;
 
 O modelo com menor erro quadrático médio foi o gerado pela Regressão Lasso. Em seguida, com um erro muito próximo, vem o modelo gerado pelo Ridge e por último, o modelo gerado pela Regressão KNN, com erro quadrático médio maior que os outros dois.
 
@@ -130,7 +128,7 @@ ggplot(varImp(lasso.model.cv)) +
   labs(title="Importância das variáveis usando Lasso", y="Importância", x="Variável")
 ```
 
-Analisando os coeficientes gerados no Lasso, temos que os com valor 0 são eliminados por ele. Abaixo, temos as variáveis
+Analisando os coeficientes gerados no Lasso, temos que os com valor 0 são eliminados por ele. Abaixo, temos as variáveis descartadas pelo modelo. Para variáveis categóricas, o modelo gera uma nova variável para cada nível, por isso temos a presença de variáveis como partidoPCB e grauLÊ E ESCREVE.
 
 ```{r}
 coefficients.lasso <- predict.enet(lasso.model.cv$finalModel, type='coefficients', s=lasso.model.cv$bestTune$fraction, mode='fraction')$coefficients
@@ -143,6 +141,29 @@ coefficients.lasso.model.filtered <- coefficients.lasso.model %>% filter(coefici
 
 coefficients.lasso.model.filtered
 ```
+
+
+#4.Re-treine o melhor modelo (usando os melhores valores de parâmetros encontrados em todos os dados, sem usar validação cruzada). 
+
+O modelo encontrado com o menor RMSE foi o gerado pelo Lasso. Retreinando o modelo, 
+
+```{r}
+
+lambdaGrid <- expand.grid(lambda = 0.0421)
+
+set.seed(825)
+
+lasso.fit <- train(votos ~ ., 
+               data = eleicoes2014.filtered,
+               method = "lasso",
+               tuneGrid = lambdaGrid,
+               preProcess = c('scale', 'center'))
+
+lasso.fit
+
+
+```
+
 
 
 
