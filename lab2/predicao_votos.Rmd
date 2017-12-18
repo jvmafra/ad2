@@ -17,7 +17,7 @@ library(elasticnet)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-set.seed(825)
+set.seed(895)
 ```
 
 ANALISANDO OS DADOS INICIAIS:
@@ -46,11 +46,11 @@ Para todos os modelos, foi utilizada a validação cruzada com 5 blocos. Em rela
 
 REGRESSÃO RIDGE:
 
-Usando a regressão ridge, o lâmbda escolhido foi 0.0421, com um RMSE obtido de 26081.
+Usando a regressão ridge, o lâmbda escolhido foi 0.00023, com um RMSE obtido de 25697.93.
 
 ```{r}
 
-set.seed(825)
+set.seed(895)
 
 fitControl <- trainControl(method = "cv",
                            number = 5)
@@ -67,11 +67,11 @@ ridge.model.cv
 
 REGRESSÃO LASSO:
 
-Para o Lasso, o lâmbda escolhido foi de 0.3666, que apresentou um RMSE de 26062.97.
+Para o Lasso, o lâmbda escolhido foi de 0.9, que apresentou um RMSE de 25699.33.
 
 ```{r}
 
-set.seed(825)
+set.seed(895)
 
 lasso.model.cv <- train(votos ~ ., 
                data = eleicoes2014.filtered,
@@ -87,11 +87,11 @@ lasso.model.cv
 
 REGRESSÃO KNN:
 
-Para a regressão KNN, o número K dos melhores vizinhos escolhido foi 9, com um RMSE de 28117.28.
+Para a regressão KNN, o número K dos melhores vizinhos escolhido foi 13, com um RMSE de 28121.94.
 
 ```{r}
 
-set.seed(825)
+set.seed(895)
 
 knn.model.cv <- train(votos ~ ., 
                data = eleicoes2014.filtered,
@@ -106,15 +106,15 @@ knn.model.cv
 
 #2. Compare os três modelos em termos do erro RMSE de validação cruzada.
 
-RMSE da Regressão Ridge: 26081;
-RMSE da Regressão Lasso: 26062;
-RMSE da Regressão KNN: 28160;
+RMSE da Regressão Ridge: 25697;
+RMSE da Regressão Lasso: 25699;
+RMSE da Regressão KNN: 28121;
 
-O modelo com menor erro quadrático médio foi o gerado pela Regressão Lasso. Em seguida, com um erro muito próximo, vem o modelo gerado pelo Ridge e por último, o modelo gerado pela Regressão KNN, com erro quadrático médio maior que os outros dois.
+O modelo com menor erro quadrático médio foi o gerado pela Regressão Ridge. Em seguida, com um erro muito próximo, vem o modelo gerado pelo Lasso e por último, o modelo gerado pela Regressão KNN, com erro quadrático médio maior que os outros dois.
 
 #3. Quais as variáveis mais importantes segundo o modelo de regressão Ridge e Lasso?  Variáveis foram descartadas pelo Lasso? Quais?
 
-Os dois modelos nos fornecem o mesmo resultado para a importância das variáveis. Temos que as mais importantes foram o total da receita do candidato (com overall igual a 100) e o total de despesas do mesmo (com overall igual a 97). Em seguida, um pouco mais distantes das duas primeiras, aparecem a quantidade de despesas (com overall 57) e a quantidade de doações que o deputado recebeu (overall igual a 51).
+Os dois modelos nos fornecem o mesmo resultado para a importância das variáveis. Temos que as mais importantes foram o total da receita do candidato (com overall igual a 100) e o total de despesas do mesmo (com overall igual a 97). Em seguida, um pouco mais distante das duas primeiras, aparecem a quantidade de despesas (com overall 57) e a quantidade de doações que o deputado recebeu (overall igual a 51).
 
 ```{r}
 ggplot(varImp(ridge.model.cv)) +
@@ -128,7 +128,7 @@ ggplot(varImp(lasso.model.cv)) +
   labs(title="Importância das variáveis usando Lasso", y="Importância", x="Variável")
 ```
 
-Analisando os coeficientes gerados no Lasso, temos que os com valor 0 são eliminados por ele. Abaixo, temos as variáveis descartadas pelo modelo. Para variáveis categóricas, o modelo gera uma nova variável para cada nível, por isso temos a presença de variáveis como partidoPCB e grauLÊ E ESCREVE.
+No Lasso, os coeficientes com valor 0 são eliminados por ele. Como podemos ver abaixo, nenhuma variável foi descartada pelo modelo.
 
 ```{r}
 coefficients.lasso <- predict.enet(lasso.model.cv$finalModel, type='coefficients', s=lasso.model.cv$bestTune$fraction, mode='fraction')$coefficients
@@ -145,24 +145,81 @@ coefficients.lasso.model.filtered
 
 #4.Re-treine o melhor modelo (usando os melhores valores de parâmetros encontrados em todos os dados, sem usar validação cruzada). 
 
-O modelo encontrado com o menor RMSE foi o gerado pelo Lasso. Retreinando o modelo, 
+O modelo encontrado com o menor RMSE foi o gerado pelo Ridge, com parâmetro lâmbda igual a 0.00023. Vamos usar isso para re-treinar o modelo. O RMSE obtido foi de 26449.
 
 ```{r}
 
-lambdaGrid <- expand.grid(lambda = 0.0421)
+lambdaGrid <- expand.grid(lambda = 0.0002371374)
 
 set.seed(825)
 
-lasso.fit <- train(votos ~ ., 
+ridge.fit <- train(votos ~ ., 
                data = eleicoes2014.filtered,
-               method = "lasso",
-               tuneGrid = lambdaGrid,
+               method = "ridge",
+               tuneLength = 30,
+               trControl = fitControl <- trainControl(method = "cv", number =10),
                preProcess = c('scale', 'center'))
 
-lasso.fit
+ridge.fit
 
 
 ```
+
+
+Melhorando o modelo gerado usando outro método:
+
+Usando agora o método PLS (Partial least squares), vamos fazer um novo treinamento. O RMSE observado foi de 25704, ou seja, obtivemos um desempenho melhor que o modelo gerado pela regressão ridge.
+
+```{r}
+set.seed(895)
+
+pls.fit <- train(votos ~ ., 
+               data = eleicoes2014.filtered,
+               method = "pls",
+               trControl = fitControl <- trainControl(method = "cv", number =12),
+               tuneLength = 25,
+               preProcess = c('scale', 'center'))
+
+pls.fit
+
+```
+
+
+#5.Use esse último modelo treinado para prever os dados de teste disponíveis no challenge que criamos na plataforma Kaggle.
+
+
+Usando um arquivo de teste, vamos realizar inicialmente as predições usando o modelo ridge com o melhor lâmbda encontrado inicialmente.
+
+
+```{r}
+test.df <- read.csv("~/workspace/ad2/lab2/test.csv", encoding = "UTF-8")
+
+
+predictions <- predict(ridge.fit, test.df)
+
+df.to.submission <- data.frame(ID = test.df$ID, votos = predictions)
+
+df.to.submission <- apply(df.to.submission, 2, function(x) {ifelse(x < 0, 0, x)}) 
+
+write.csv(df.to.submission, "jv_submission_ridge_fit_3.csv", row.names = FALSE)
+```
+
+
+Agora, realizando as predições usando o modelo gerado pelo método PLS.
+
+```{r}
+predictions.pls <- predict(pls.fit, test.df)
+
+df.to.submission.pls <- data.frame(ID = test.df$ID, votos = predictions.pls)
+
+df.to.submission.pls <- apply(df.to.submission.pls, 2, function(x) {ifelse(x < 0, 0, x)}) 
+
+write.csv(df.to.submission.pls, "jv_submission_pls_cv_12.csv", row.names = FALSE)
+```
+
+
+Apesar do PLS ter apresentado menor RMSE no treino, o modelo gerado pela regressão Ridge obteve, a priori, um score melhor no teste na plataforma Kaggle.
+
 
 
 
