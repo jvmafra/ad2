@@ -1,0 +1,44 @@
+---
+title: "Predição de deputados eleitos"
+author: "João Victor Barroso Mafra"
+date: "26 de fevereiro de 2018"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(caret)
+library(elasticnet)
+require(scales)
+library(unbalanced)
+```
+
+FILTRAGEM DOS DADOS:
+
+Inicialmente vamos excluir as colunas setor_economico_receita e setor_economico_despesa por apresentarem boa parte dos seus valores como nulos. Além disso, serão excluídas as colunas nome e numero_candidato, consideradas inúteis para realização de predição.
+
+```{r}
+eleicoes <- read.csv("~/workspace/ad2/lab3/train.csv") %>% select (-setor_economico_receita, -setor_economico_despesa, -nome,
+                                                                   -numero_cadidato)
+```
+
+#1. Há desbalanceamento das classes (isto é, uma classe tem muito mais instâncias que outra)? Em que proporção? Quais efeitos colaterais o desbalanceamento de classes pode causar no classificador?
+
+Sim, já que aproximadamente 90% dos candidatos dos dados não foram eleitos. O efeito colateral disso é o enviesamento do nosso classificador, que pode aprender com a classe com mais ocorrências (nesse caso, a situação final "não eleito") e tender a classificar exemplos não conhecidos como sendo dessa classe.
+
+```{r}
+p <- ggplot(eleicoes, aes(x = situacao_final)) +  
+        geom_bar(aes(y = (..count..)/sum(..count..))) + 
+        geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = -0.25) + labs(title = "Proporção da situação final dos candidatos", y = "Proporção", x = "Situação do candidato")
+
+p
+```
+
+
+
+
+
+
