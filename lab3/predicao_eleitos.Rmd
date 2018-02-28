@@ -37,6 +37,83 @@ p <- ggplot(eleicoes, aes(x = situacao_final)) +
 p
 ```
 
+#2. Treine: um modelo de regressão logística, uma árvore de decisão e um modelo de adaboost. Tune esses modelos usando validação cruzada e controle overfitting se necessário, considerando as particularidades de cada modelo. 
+
+Realizando divisão entre treino e teste:
+
+```{r}
+
+dataPartition <- createDataPartition(y = eleicoes$situacao_final, p=0.75, list=FALSE)
+
+treino <- eleicoes[ dataPartition, ]
+teste <- eleicoes[ -dataPartition, ]
+
+```
+
+Definindo a validação cruzada do modelo a ser gerado e definindo o undersampling para tornar as classes balanceadas.
+
+```{r}
+fit.control <- trainControl(method = "cv", 
+                     number = 10, 
+                     repeats = 10, 
+                     verboseIter = FALSE,
+                     sampling = "down")
+
+adaboost.control <- trainControl(sampling = "down")
+
+formula = as.formula(situacao_final ~ .)
+
+```
+
+
+REGRESSÃO LOGÍSTICA:
+
+```{r}
+
+regressao.logistica <- caret::train(situacao_final ~ .,
+                 data = treino,
+                 method="glm",
+                trControl = fit.control,
+                 family="binomial",
+                 na.action = na.omit)
+
+
+summary(regressao.logistica)
+
+```
+
+
+ÁRVORE DE DECISÃO:
+
+```{r}
+
+arvore.decisao <- caret::train(formula,
+                 data=treino,
+                 method = "rpart",
+                 trControl = fit.control,
+                 cp=0.001,  # parâmetro de complexidade
+                 maxdepth=20)
+
+summary(arvore.decisao)
+```
+
+
+ADABOOST:
+
+
+```{r}
+
+adaboost <- caret::train(formula,
+                data=treino,
+                trControl = adaboost.control,
+                method = "adaboost")
+
+adaboost
+
+```
+
+
+
 
 
 
